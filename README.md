@@ -8,9 +8,15 @@ firstName|lastName|address|city|state|stateName|zip|phone|email|password
 
 The address is a real public place returned by Google. The name, phone, email, and password are generated; they do not belong to the address owner. A generated phone number or email may happen to be assigned to someone, and neither is checked for availability.
 
-## Installation and module API
+## Install from GitHub
 
-Install from GitHub with `npm install github:imrelo/realaddr`, or from a local copy with `npm install /path/to/realaddr`. This package has not been published to npm.
+```bash
+npm install github:imrelo/realaddr
+```
+
+You can also install from a local copy with `npm install /path/to/realaddr`. This package has not been published to npm.
+
+## Module API
 
 ```js
 import {
