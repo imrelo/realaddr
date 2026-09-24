@@ -1,0 +1,36 @@
+{
+  "name": "realaddr",
+  "version": "1.0.0",
+  "description": "Generate sample profiles with real public addresses from Google Places, by country or proxy location.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./server": "./src/server.js"
+  },
+  "bin": {
+    "realaddr": "./src/cli.js"
+  },
+  "files": [
+    "src/*.js",
+    "src/*.json",
+    "src/firstname.txt",
+    "src/lastname.txt",
+    "licenses/"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env src/server.js",
+    "generate": "node --env-file-if-exists=.env src/cli.js",
+    "test": "node --test",
+    "verify:package": "node scripts/verify-package.js"
+  },
+  "dependencies": {
+    "https-proxy-agent": "^9.1.0",
+    "libphonenumber-js": "^1.13.13",
+    "socks-proxy-agent": "^10.1.0"
+  }
+}
