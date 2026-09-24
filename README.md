@@ -10,7 +10,7 @@ The address is a real public place returned by Google. The name, phone, email, a
 
 ## Installation and module API
 
-Install from a local copy with `npm install /path/to/realaddr`. After creating a GitHub repository named `realaddr`, install it with `npm install github:OWNER/realaddr#TAG`, replacing `OWNER` and `TAG` with the actual values. This package has not been published to npm.
+Install from GitHub with `npm install github:imrelo/realaddr`, or from a local copy with `npm install /path/to/realaddr`. This package has not been published to npm.
 
 ```js
 import {
