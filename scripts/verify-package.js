@@ -33,6 +33,11 @@ try {
     assert.equal(fields.length, 10);
     assert.ok(fields.every(Boolean));
     assert.equal(fields[5], 'California');
+    const jsonProfile = createCountryProfileGenerator({
+      apiKey: 'test-key', format: 'json',
+      fetchImpl: async () => ({ ok: true, json: async () => ({ places: [{ addressComponents: [c('country', 'United States', 'US'), c('administrative_area_level_1', 'California', 'CA'), c('locality', 'Sample City'), c('route', 'Main Street'), c('street_number', '123'), c('postal_code', '90210')] }] }) })
+    });
+    assert.equal((await jsonProfile('US')).stateName, 'California');
     assert.match(fields[7], /^\\d{10}$/);
     await assert.rejects(generateProfileByCountry('XX'), InputError);
     await assert.rejects(generateProfileByCountry('8.8.8.8'), InputError);
@@ -46,7 +51,7 @@ try {
   execFileSync(process.execPath, ['--input-type=module', '-e', source], { cwd: directory, timeout: 15000 });
   const cli = join(directory, 'node_modules/realaddr/src/cli.js');
   const help = execFileSync(process.execPath, [cli, '--help'], { cwd: directory, encoding: 'utf8', timeout: 15000 });
-  assert.match(help, /Usage: realaddr/);
+  assert.match(help, /Usage: realaddr <country> \[--json\]/);
   console.log(`Package verified: ${paths.length} files, ${pack.size} bytes compressed. Installed import, generation and CLI passed offline.`);
 } finally {
   // Only remove the unique temporary directory created by this script.

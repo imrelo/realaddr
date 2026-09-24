@@ -23,15 +23,24 @@ export function createCountryProfileServer(generateRecord = generateProfileByCou
       return;
     }
     const keys = [...url.searchParams.keys()];
-    if (keys.length !== 1 || keys[0] !== 'country') {
-      res.writeHead(400).end('Provide exactly one country parameter\n');
+    const countries = url.searchParams.getAll('country');
+    const formats = url.searchParams.getAll('format');
+    if (countries.length !== 1 || formats.length > 1 || keys.length !== countries.length + formats.length) {
+      res.writeHead(400).end('Provide one country and at most one format parameter\n');
       return;
     }
-    const input = url.searchParams.get(keys[0]);
+    const format = formats[0] ?? 'text';
+    if (format !== 'text' && format !== 'json') {
+      res.writeHead(400).end('format must be text or json\n');
+      return;
+    }
+    if (format === 'json') res.setHeader('Content-Type', 'application/json; charset=utf-8');
     try {
-      res.end(`${await generateRecord(input)}\n`);
+      const result = await generateRecord(countries[0], { format });
+      res.end(`${format === 'json' ? JSON.stringify(result) : result}\n`);
     } catch (error) {
-      res.writeHead(error instanceof InputError ? 400 : 502).end(`${error.message}\n`);
+      const message = format === 'json' ? JSON.stringify({ error: error.message }) : error.message;
+      res.writeHead(error instanceof InputError ? 400 : 502).end(`${message}\n`);
     }
   });
 }

@@ -1,6 +1,6 @@
 # realaddr
 
-An ESM Node.js 22.12+ module that combines public addresses from Google Places with generated sample profile fields. It accepts an English country name or ISO country code, or separately a proxy URL. Each successful call returns one pipe-delimited line with ten nonempty fields:
+An ESM Node.js 22.12+ module that combines public addresses from Google Places with generated sample profile fields. It accepts an English country name or ISO country code, or separately a proxy URL. By default, each successful call returns one pipe-delimited line with ten nonempty fields. Set `format: 'json'` to receive an object with the same keys:
 
 ```text
 firstName|lastName|address|city|state|stateName|zip|phone|email|password
@@ -40,9 +40,15 @@ console.log(await generateProfileByProxy('socks5://user:password@host:1080', {
   apiKey: process.env.GOOGLE_API_KEY,
 }));
 console.log(await lookupProxyLocation('http://user:password@host:8080'));
+
+const jsonProfile = await generateProfileByCountry('US', {
+  apiKey: process.env.GOOGLE_API_KEY,
+  format: 'json',
+});
+console.log(jsonProfile.address, jsonProfile.stateName);
 ```
 
-`generateProfileByCountry` and `generateProfileByProxy` return `Promise<string | null>`. The first accepts only an English country name or ISO-2/ISO-3 code, such as `United States`, `US`, or `USA`. It does not accept an IP address or Vietnamese country name. The country generator factory captures options without changing `process.env`. Importing the package loads the local name and country data but does not start a server or send requests.
+`generateProfileByCountry` and `generateProfileByProxy` return `Promise<string | null>` by default, or `Promise<object | null>` with `format: 'json'`. The first accepts only an English country name or ISO-2/ISO-3 code, such as `United States`, `US`, or `USA`. It does not accept an IP address or Vietnamese country name. The country generator factory captures options without changing `process.env`; a second argument can override options for one call, including `format`. Importing the package loads the local name and country data but does not start a server or send requests.
 
 `generateProfileByProxy` first looks up the proxy's exit IP and approximate location. It calls `ipwho.is` through the proxy, then `geo.myip.link` through the same proxy if the first response fails or lacks required data. Each provider is called at most once. If both fail, the function returns `null`. Google Places then searches within a roughly 40 × 40 km rectangle around the reported coordinates. For US results, the Google state name must match the state reported by the IP provider and must be one of the 48 contiguous states. Google requests go directly from Node.js, while the IP lookups go through the supplied proxy. A rotating proxy may yield a different exit IP for the fallback request; use a sticky session if consistency matters.
 
@@ -53,6 +59,7 @@ The proxy location is approximate. The returned address is a public place near t
 | Option | Default | Purpose |
 |---|---|---|
 | `apiKey` | `process.env.GOOGLE_API_KEY` | Places API (New) key. |
+| `format` | `'text'` | Use `'json'` for an object with the ten named fields. |
 | `referer` | `process.env.GOOGLE_REFERER` | Optional Referer header for Google; an empty string omits it. |
 | `timeoutMs` | `15000` | Per-request timeout in milliseconds. |
 | `signal` | None | AbortSignal for the entire operation. |
@@ -90,15 +97,17 @@ npm start
 
 Keep an existing `.env` rather than overwriting it. The Google Cloud project needs Places API (New), billing, and a key authorized for this API. Set `GOOGLE_REFERER` only if needed for your key's restrictions. `.env` is excluded from Git and the package. The module and installed CLI do not load `.env` automatically; the repository's npm scripts do.
 
-The server listens on `127.0.0.1:3000` by default. It only accepts `GET /generate?country=US` (or another English country name/ISO code) and returns `text/plain`:
+The server listens on `127.0.0.1:3000` by default. It accepts `GET /generate?country=US` (or another English country name/ISO code). The default response is `text/plain`; add `format=json` for `application/json`:
 
 ```powershell
 curl.exe "http://127.0.0.1:3000/generate?country=US"
+curl.exe "http://127.0.0.1:3000/generate?country=US&format=json"
 npm run --silent generate -- US
+npm run --silent generate -- US --json
 npm run --silent generate -- "United Kingdom"
 ```
 
-The installed CLI is `npx realaddr US`. To embed the HTTP server:
+The installed CLI is `npx realaddr US`; add `--json` for one JSON object on stdout. To embed the HTTP server:
 
 ```js
 import { createCountryProfileServer } from 'realaddr/server';
@@ -110,7 +119,7 @@ const app = createCountryProfileServer(createCountryProfileGenerator({
 app.listen(3000, '127.0.0.1');
 ```
 
-The HTTP server and CLI expose country generation. The proxy generator is a module function. The server returns HTTP 200 with the literal line `null` when no complete record is found, HTTP 400 for invalid input, and HTTP 502 for configuration or Google failures. The CLI prints `null` for no result and exits with code 1 on an error.
+The HTTP server and CLI expose country generation. The proxy generator is a module function. The server returns HTTP 200 with the literal line `null` when no complete record is found, in either format. With `format=json`, successful records are JSON objects and errors are JSON objects with an `error` key. Invalid input returns HTTP 400; configuration or Google failures return HTTP 502. The CLI prints `null` for no result and exits with code 1 on an error.
 
 ## Data and limitations
 

@@ -6,5 +6,5 @@ export { lookupProxyLocation } from './proxy-ip.js';
 /** Capture per-client options without changing process.env or opening a server. */
 export function createCountryProfileGenerator(options = {}) {
   const config = { ...options };
-  return country => generateProfileByCountry(country, config);
+  return (country, overrides = {}) => generateProfileByCountry(country, { ...config, ...overrides });
 }
