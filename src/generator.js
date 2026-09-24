@@ -155,7 +155,15 @@ export function serialize(fields) {
   return fields.map(value => String(value ?? '').replace(/[|\r\n]+/g, ' ').trim()).join('|');
 }
 
+const outputFields = ['firstName', 'lastName', 'address', 'city', 'state', 'stateName', 'zip', 'phone', 'email', 'password'];
+function outputFormat(options) {
+  const format = options.format ?? 'text';
+  if (format !== 'text' && format !== 'json') throw new InputError('format must be text or json');
+  return format;
+}
+
 async function generateRecord(country, options, ipLocation) {
+  const format = outputFormat(options);
   for (let attempt = 0; attempt <= 3; attempt++) {
     try {
       let phone = country === 'US' ? undefined : phoneFor(country);
@@ -169,7 +177,9 @@ async function generateRecord(country, options, ipLocation) {
         phone, emailFor(firstName, lastName), password()
       ]);
       const fields = record.split('|');
-      if (fields.length === 10 && fields.every(field => field.trim())) return record;
+      if (fields.length === outputFields.length && fields.every(Boolean)) {
+        return format === 'json' ? Object.fromEntries(outputFields.map((name, index) => [name, fields[index]])) : record;
+      }
     } catch (error) {
       if (!(error instanceof IncompleteRecordError)) throw error;
     }
@@ -182,6 +192,7 @@ export async function generateProfileByCountry(country, options = {}) {
 }
 
 export async function generateProfileByProxy(proxyUrl, options = {}) {
+  outputFormat(options);
   const { apiKey = process.env.GOOGLE_API_KEY, timeoutMs = 15000, fetchImpl = fetch, proxyFetchImpl, signal } = options;
   if (!apiKey) throw new Error('Set GOOGLE_API_KEY in .env');
   if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2147483647) throw new InputError('timeoutMs must be an integer from 1 to 2147483647');
